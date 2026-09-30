@@ -1,0 +1,7 @@
+'use client';
+import {useState} from 'react';
+export default function Login(){
+ const [password,setPassword]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'#f3f3ed',color:'#123c34',padding:24}}><form style={{maxWidth:400,width:'100%',padding:36,background:'white',borderRadius:24}} onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/personal/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});const d=await r.json();if(!r.ok)throw Error(d.error);location.href='/personal';}catch(e){setError(e instanceof Error?e.message:'Connexion indisponible.');}finally{setBusy(false);}}}>
+ <p style={{letterSpacing:3,fontSize:11}}>CAREER STUDIO</p><h1 style={{fontSize:30,margin:'18px 0'}}>Votre espace privé.</h1><p>Connectez-vous pour retrouver votre agent et vos candidatures.</p><label style={{display:'block',marginTop:24}}>Mot de passe<input autoComplete="current-password" type="password" value={password} onChange={e=>setPassword(e.target.value)} required style={{display:'block',width:'100%',border:'1px solid #b6c7be',borderRadius:10,padding:12,marginTop:8}}/></label><button disabled={busy} style={{marginTop:20,background:'#123c34',color:'white',borderRadius:10,padding:12,width:'100%'}}>{busy?'Connexion…':'Ouvrir mon espace'}</button>{error&&<p role="alert">{error}</p>}</form></main>;
+}

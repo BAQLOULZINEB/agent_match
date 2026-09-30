@@ -1,0 +1,43 @@
+{
+  "name": "Career Ops — local France Travail scan",
+  "active": false,
+  "nodes": [
+    {
+      "id": "c687190d-29f6-444e-bb38-806ca27471f7",
+      "name": "Test manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 80],
+      "parameters": {}
+    },
+    {
+      "id": "5df9d85e-5ad5-430b-ad6a-f4c06fc9e4f2",
+      "name": "Every six hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 280],
+      "parameters": { "rule": { "interval": [{ "field": "hours", "hoursInterval": 6, "triggerAtMinute": 0 }] } }
+    },
+    {
+      "id": "74d1782b-b845-48de-8fcd-9d8fe4c8c01b",
+      "name": "Collect offers locally",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 180],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:3000/api/personal/scheduled-scan",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 180000 }
+      }
+    }
+  ],
+  "connections": {
+    "Test manually": { "main": [[{ "node": "Collect offers locally", "type": "main", "index": 0 }]] },
+    "Every six hours": { "main": [[{ "node": "Collect offers locally", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Africa/Casablanca" },
+  "pinData": {},
+  "tags": []
+}
