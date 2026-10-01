@@ -79,6 +79,11 @@ export async function scanPublic(root) {
     }
   },{timeoutMs:1000,maxWaitMs:1000});
 }
+export function startPublicScan(root) {
+  // The browser action must not wait on slow or rate-limited ATS hosts.
+  void scanPublic(root).catch(()=>{});
+  return {started:true,mode:'background'};
+}
 async function ensureTracked(root,s,offer) {
   const trackerPath=path.join(root,'data','applications.md');
   fs.mkdirSync(path.dirname(trackerPath),{recursive:true});
@@ -176,7 +181,7 @@ export async function handle(root,input) {
     case 'reject':return decide(root,input.id,false);
     case 'import':return importOffers(root,[input.offer]);
     case 'scan':return scan(root);
-    case 'public-scan':return scanPublic(root);
+    case 'public-scan':return startPublicScan(root);
     case 'stage':return changeStage(root,input);
     case 'draft':return saveDraft(root,input);
     case 'prepare-draft':return prepareDraft(root,input);
