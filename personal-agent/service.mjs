@@ -69,8 +69,11 @@ export async function scanPublic(root) {
     await transaction(root,s=>event(s,'Collecte','Recherche publique France','Sources ATS publiques : Greenhouse, Lever et Ashby. France Travail n’est pas requis.','running'));
     try {
       // Keep the interactive search quick. The scheduler can repeat it for broader coverage.
-      const result=await exec(process.execPath,[path.join(codeRoot,'scan-ats-full.mjs'),'--since','7','--limit','15','--ats','greenhouse,lever,ashby','--json','--dry-run'],{cwd:codeRoot,env:{...environment(root),windowsHide:true,CAREER_OPS_PORTALS:path.join(codeRoot,'personal-agent','public-portals.yml')},windowsHide:true,timeout:60000,maxBuffer:8000000});
-      const payload=JSON.parse(result.stdout.trim());
+      let payload={companiesScanned:0,offers:[]};
+      try {
+        const result=await exec(process.execPath,[path.join(codeRoot,'scan-ats-full.mjs'),'--since','7','--limit','15','--ats','greenhouse,lever,ashby','--json','--dry-run'],{cwd:codeRoot,env:{...environment(root),windowsHide:true,CAREER_OPS_PORTALS:path.join(codeRoot,'personal-agent','public-portals.yml')},windowsHide:true,timeout:20000,maxBuffer:8000000});
+        payload=JSON.parse(result.stdout.trim());
+      } catch { /* Continue with the credential-free API when ATS hosts are slow. */ }
       let offers=payload.offers||[];
       // Credential-free fallback: Arbeitnow exposes a public job feed when
       // ATS boards have no fresh matching postings.
