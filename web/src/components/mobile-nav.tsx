@@ -150,10 +150,6 @@ export function MobileNav() {
         </div>
 
         <nav className="flex flex-col gap-1 px-3">
-          <Link href="/personal" onClick={() => setOpen(false)} className="mb-2 flex items-center gap-3 rounded-lg border border-brand/30 bg-brand-soft px-3 py-3 text-[15px] font-semibold text-brand-text">
-            <span aria-hidden>✦</span>
-            Career Studio
-          </Link>
           {NAV_ITEMS.map(({ href, label, icon: Icon, chip }) => {
             const active = isActivePath(href, pathname);
             return (
