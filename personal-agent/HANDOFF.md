@@ -129,6 +129,10 @@ TypeScript, the production build and browser layout smoke checks passed on 2026-
 
 ## Release gates and next steps
 
+### GitHub CodeQL status (2026-10-01)
+
+The latest public run (`CodeQL Analysis #7`, commit `d92c717`) was rejected before the matrix jobs started. GitHub reports: `The job was not started because your account is locked due to a billing issue.` This is an account billing lock, not a CodeQL finding or repository workflow error. Restore GitHub billing/account access and rerun the workflow from Actions. The workflow covers JavaScript/TypeScript and Go; GitHub also emitted only an informational `ubuntu-latest` migration notice.
+
 1. **Track the connector in every release.** It lives under the intentionally ignored `plugins.local/` tree and must be explicitly added. Keep private settings excluded.
 2. **Launch and smoke-test.** Start with `-NoBrowser`, verify loopback URL/heartbeat, start twice, stop safely and restart. Keep the schedule disabled until France Travail is connected.
 3. **Connect accounts privately.** Test consent and authenticated behavior. Distinguish configured, authenticated and exercised states.
