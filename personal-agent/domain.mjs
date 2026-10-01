@@ -2,7 +2,7 @@ import { normalizeUrl } from '../url-key.mjs';
 
 export const defaults = {
   roles: ['AI Engineer', 'Data Engineer', 'ML Engineer', 'Data Scientist', 'GenAI Engineer'],
-  countries: ['FR', 'MA'], priorityCities: ['Lille', 'Rabat', 'Salé'],
+  countries: ['FR', 'MA'], priorityCities: ['Tours', 'Lille', 'Rabat', 'Salé'],
   priorityCompanies: ['Deloitte', 'Capgemini'], contracts: ['stage', 'alternance'],
   maxAgeDays: 7, scanEveryHours: 6, scheduleEnabled: false, timezone: 'Africa/Casablanca',
   startDate: '', durationMonths: null, languages: ['fr', 'en'],
