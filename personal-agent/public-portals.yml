@@ -13,6 +13,15 @@ title_filter:
     - "Generative AI"
     - "LLM"
     - "RAG"
+    - "Intern"
+    - "Internship"
+    - "Stage"
+    - "Alternance"
+    - "Apprentice"
+    - "Software Engineer"
+    - "Backend Engineer"
+    - "Developer"
+    - "Data Analyst"
   negative:
     - "Senior"
     - "Staff"
@@ -22,4 +31,4 @@ title_filter:
 location_filter:
   allow: ["France", "Tours", "Lille", "Paris", "Rabat", "Salé", "Morocco"]
   strict: false
-max_posting_age_days: 14
+max_posting_age_days: 30
