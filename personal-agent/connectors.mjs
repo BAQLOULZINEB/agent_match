@@ -5,7 +5,7 @@ import {readJSON,write,transaction,event} from './store.mjs';
 import {cleanText} from './domain.mjs';
 
 const privateFile=root=>path.join(root,'data','personal-secrets.json');
-const allowedKeys=['AI_PROVIDER','OPENROUTER_API_KEY','OPENROUTER_MODEL','OPENAI_API_KEY','OPENAI_MODEL','FRANCE_TRAVAIL_CLIENT_ID','FRANCE_TRAVAIL_CLIENT_SECRET','FRANCE_TRAVAIL_SCOPE','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_REDIRECT_URI'];
+const allowedKeys=['AI_PROVIDER','OPENROUTER_API_KEY','OPENROUTER_API_KEYS','OPENROUTER_MODEL','OPENAI_API_KEY','OPENAI_API_KEYS','OPENAI_MODEL','FRANCE_TRAVAIL_CLIENT_ID','FRANCE_TRAVAIL_CLIENT_SECRET','FRANCE_TRAVAIL_SCOPE','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_REDIRECT_URI'];
 export function credentials(root) {
   const saved=readJSON(privateFile(root),{});
   for(const key of allowedKeys) if(process.env[key]) saved[key]=process.env[key];
@@ -27,21 +27,28 @@ export async function saveCredentials(root,values) {
 export function connectionStatus(root) {
   const c=credentials(root),g=readJSON(path.join(root,'data','google-token.json'),{});
   const ai=aiSettings(c);
-  return {ai:!!ai.key,provider:ai.provider,model:ai.model,franceTravail:!!(c.FRANCE_TRAVAIL_CLIENT_ID&&c.FRANCE_TRAVAIL_CLIENT_SECRET),googleConfigured:!!(c.GOOGLE_CLIENT_ID&&c.GOOGLE_CLIENT_SECRET),googleConnected:!!g.refresh_token,googleScopes:g.scope||'',redirectUri:c.GOOGLE_REDIRECT_URI||'http://localhost:3000/personal/google-callback',morocco:'manual-import',hosting:'local'};
+  return {ai:ai.keys.length>0,provider:ai.provider,model:ai.model,keyCount:ai.keys.length,franceTravail:!!(c.FRANCE_TRAVAIL_CLIENT_ID&&c.FRANCE_TRAVAIL_CLIENT_SECRET),googleConfigured:!!(c.GOOGLE_CLIENT_ID&&c.GOOGLE_CLIENT_SECRET),googleConnected:!!g.refresh_token,googleScopes:g.scope||'',redirectUri:c.GOOGLE_REDIRECT_URI||'http://localhost:3000/personal/google-callback',morocco:'manual-import',hosting:'local'};
 }
 export function aiSettings(c) {
-  const provider=c.AI_PROVIDER||(c.OPENROUTER_API_KEY?'openrouter':'openai');
-  return provider==='openrouter'?{provider,key:c.OPENROUTER_API_KEY,model:c.OPENROUTER_MODEL||'openrouter/free'}:{provider:'openai',key:c.OPENAI_API_KEY,model:c.OPENAI_MODEL||'gpt-4.1-mini'};
+  const provider=c.AI_PROVIDER||((c.OPENROUTER_API_KEY||c.OPENROUTER_API_KEYS)?'openrouter':'openai');
+  const raw=provider==='openrouter'?(c.OPENROUTER_API_KEYS||c.OPENROUTER_API_KEY):(c.OPENAI_API_KEYS||c.OPENAI_API_KEY);
+  const keys=String(raw||'').split(/[\s,;]+/).map(x=>x.trim()).filter(Boolean);
+  return provider==='openrouter'?{provider,keys,model:c.OPENROUTER_MODEL||'openrouter/free'}:{provider,keys,model:c.OPENAI_MODEL||'gpt-4.1-mini'};
 }
 export async function aiResponse(c,{instructions,messages}) {
   const a=aiSettings(c);
-  if(!a.key)throw Error('Configurez la clé du fournisseur IA dans Connexions.');
-  const headers={Authorization:`Bearer ${a.key}`,'Content-Type':'application/json'};
+  if(!a.keys.length)throw Error('Configurez au moins une clé du fournisseur IA dans Connexions.');
   if(a.provider==='openrouter') {
-    const result=await jsonRequest('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers,body:JSON.stringify({model:a.model,messages:[{role:'system',content:instructions},...messages],response_format:{type:'json_object'},max_tokens:5000,provider:{data_collection:'deny'}})});
-    if(result.error)throw Error('Le fournisseur IA a refusé la demande. Vérifiez le modèle et le quota.');
-    return JSON.parse(result.choices?.[0]?.message?.content||'{}');
+    let last;
+    for(const key of a.keys) try {
+      const headers={Authorization:`Bearer ${key}`,'Content-Type':'application/json'};
+      const result=await jsonRequest('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers,body:JSON.stringify({model:a.model,messages:[{role:'system',content:instructions},...messages],response_format:{type:'json_object'},max_tokens:3500,provider:{data_collection:'deny'}})});
+      if(result.error)throw Error('Provider rejected request');
+      return JSON.parse(result.choices?.[0]?.message?.content||'{}');
+    } catch(e) { last=e; }
+    throw Error(`Toutes les clés IA ont échoué. Vérifiez les quotas et le modèle. (${last?.message||'erreur réseau'})`);
   }
+  const headers={Authorization:`Bearer ${a.keys[0]}`,'Content-Type':'application/json'};
   const result=await jsonRequest('https://api.openai.com/v1/responses',{method:'POST',headers,body:JSON.stringify({model:a.model,store:false,instructions,input:messages,text:{format:{type:'json_object'}},max_output_tokens:5000})});
   return JSON.parse((result.output||[]).flatMap(x=>x.content||[]).filter(x=>x.type==='output_text').map(x=>x.text).join(''));
 }

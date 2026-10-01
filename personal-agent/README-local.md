@@ -47,3 +47,13 @@ This command can perform a real search when the saved schedule is enabled and du
 ## Verification performed
 
 Synthetic checks passed for disabled scheduling, due calculation after restart, absent credentials without repeated events, successful scans, failure cadence, sanitized errors, and rejection of a second worker. Both PowerShell scripts passed the PowerShell parser. A full launcher/stop integration run requires the production build and must be verified separately. Live API success requires valid France Travail credentials.
+
+## Local validation and AI key rotation
+
+Run the former CI checks on this PC without GitHub Actions:
+
+```powershell
+.\personal-agent\Validate-Local.ps1 -Build
+```
+
+In **Connexions**, enter multiple private OpenRouter or OpenAI keys, one per line. If a provider rejects a key or its quota is exhausted, the assistant tries the next key automatically. Keys remain in ignored local settings and are never pushed.
