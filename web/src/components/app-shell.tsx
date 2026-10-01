@@ -37,6 +37,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <nav className="flex flex-col gap-1">
+            <Link href="/personal" className="mb-2 flex items-center gap-3 rounded-md border border-brand/30 bg-brand-soft px-3 py-2 text-sm font-semibold text-brand-text transition-colors hover:bg-surface-hover">
+              <span aria-hidden>✦</span>
+              Career Studio
+            </Link>
             {NAV_ITEMS.map(({ href, label, icon: Icon, chip }) => {
               const active = isActivePath(href, pathname);
               return (
