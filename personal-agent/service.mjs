@@ -160,6 +160,12 @@ export async function handle(root,input) {
     case 'stage':return changeStage(root,input);
     case 'draft':return saveDraft(root,input);
     case 'prepare-draft':return prepareDraft(root,input);
+    case 'export-local': {
+      if(input.confirmed!==true)throw Error('Confirmez le document exact à télécharger.');
+      const o=state(root).offers.find(x=>x.key===input.key);
+      if(!o?.draft||o.stage!=='REVIEWED'||input.version!==o.draft.version)throw Error('Relisez la version courante avant le téléchargement.');
+      return {url:`/api/personal/document?version=${encodeURIComponent(o.draft.version)}`};
+    }
     case 'evidence':return recordEvidence(root,input);
     case 'credentials':return saveCredentials(root,input.values);
     case 'chat':return chat(root,input);

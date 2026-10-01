@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { importOffers, changeStage, saveDraft, trackerRows, snapshot } from '../../../personal-agent/service.mjs';
+import { importOffers, changeStage, saveDraft, trackerRows, snapshot, handle } from '../../../personal-agent/service.mjs';
 import { state, write, readText } from '../../../personal-agent/store.mjs';
 import { offerKey } from '../../../personal-agent/domain.mjs';
 
@@ -55,6 +55,10 @@ test('fresh import proceeds through canonical tracker, versioned draft, review a
   await changeStage(root, { key, stage: 'REVIEWED', confirmed: true });
   assert.equal(state(root).offers[0].stage, 'REVIEWED');
   assert.equal(trackerRows(root)[0].status, 'Evaluated');
+  await assert.rejects(handle(root, { action: 'export-local', key, version: drafted.draft.version, confirmed: false }));
+  await assert.rejects(handle(root, { action: 'export-local', key, version: 'stale-version', confirmed: true }));
+  const download = await handle(root, { action: 'export-local', key, version: drafted.draft.version, confirmed: true });
+  assert.equal(download.url, '/api/personal/document?version=' + encodeURIComponent(drafted.draft.version));
   await assert.rejects(changeStage(root, { key, stage: 'MANUALLY_APPLIED', confirmed: false }));
   await changeStage(root, { key, stage: 'MANUALLY_APPLIED', confirmed: true });
   assert.equal(trackerRows(root).length, 1);

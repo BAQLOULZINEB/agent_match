@@ -1,0 +1,1 @@
+{"id":"france-travail","apiVersion":1,"version":"1.0.0","description":"Recherche d'offres France Travail, avec validation humaine des candidatures.","hooks":["provider","search"],"requiredEnv":["FRANCE_TRAVAIL_CLIENT_ID","FRANCE_TRAVAIL_CLIENT_SECRET"],"allowedHosts":["entreprise.francetravail.fr","api.francetravail.io"],"humanInTheLoop":true}

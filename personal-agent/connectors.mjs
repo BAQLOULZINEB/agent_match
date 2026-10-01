@@ -22,6 +22,7 @@ export async function saveCredentials(root,values) {
     write(privateFile(root),data); try{fs.chmodSync(privateFile(root),0o600);}catch{}
     event(s,'Connexions','Configuration enregistrée','Les valeurs privées restent sur le serveur.');
   });
+  return {saved:true};
 }
 export function connectionStatus(root) {
   const c=credentials(root),g=readJSON(path.join(root,'data','google-token.json'),{});

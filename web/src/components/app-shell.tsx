@@ -82,7 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {!pathname.startsWith('/personal') && <AssistantConsole />}
         <BackToTop />
         <FirstScoreView />
-        <BetaBanner />
+        {!pathname.startsWith('/personal') && <BetaBanner />}
       </div>
       </ExploreProvider>
       </ApplyProvider>

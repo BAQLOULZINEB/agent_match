@@ -26,10 +26,11 @@ export async function proxy(req: NextRequest) {
   const remote=process.env.PERSONAL_REQUIRE_AUTH==='true'||!isLoopbackHost(req.headers.get('host'));
   const password=process.env.PERSONAL_APP_PASSWORD;
   const secret=process.env.PERSONAL_SESSION_SECRET;
+  const automationEndpoint=pathname==='/api/personal/scheduled-scan';
   if(remote && (!password || password.length<16 || !secret || secret.length<32)) {
     return NextResponse.json({error:'Remote access requires a password (16+ characters) and session secret (32+ characters).'},{status:503});
   }
-  if((remote||password) && pathname!=='/login' && pathname!=='/api/personal/login' && !await verifySession(req.cookies.get('personal_session')?.value,secret)) {
+  if((remote||password) && !automationEndpoint && pathname!=='/login' && pathname!=='/api/personal/login' && !await verifySession(req.cookies.get('personal_session')?.value,secret)) {
     if(pathname.startsWith('/api/'))return NextResponse.json({error:'Sign in to your private platform.'},{status:401});
     return NextResponse.redirect(new URL('/login',req.url));
   }
