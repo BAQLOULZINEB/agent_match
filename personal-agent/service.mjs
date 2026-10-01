@@ -28,7 +28,7 @@ export function snapshot(root) {
     if(known.has(offerKey(job.url))) continue;
     try { const o=normalizeOffer({...job,title:job.role,source:'pipeline interne'});o.firstSeenAt=null;o.lastCheckedAt=null;offers.push({...o,assessment:assessOffer(o,s.search)});known.add(o.key); } catch{}
   }
-  return {...s,offers,proposals:recoverableProposals(root),profile:readText(path.join(root,'config','profile.yml')),cv:readText(path.join(root,'cv.md')),connections:connectionStatus(root)};
+  return {...s,lastScan:s.lastPublicScan||s.lastScan,offers,proposals:recoverableProposals(root),profile:readText(path.join(root,'config','profile.yml')),cv:readText(path.join(root,'cv.md')),connections:connectionStatus(root)};
 }
 export async function importOffers(root,inputs,{source='manual'}={}) {
   if(!Array.isArray(inputs)||inputs.length>1000) throw Error('Import limité à 1000 offres.');

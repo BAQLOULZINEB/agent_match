@@ -22,6 +22,12 @@ title_filter:
     - "Backend Engineer"
     - "Developer"
     - "Data Analyst"
+    - "Engineer"
+    - "Engineering"
+    - "Analytics"
+    - "Research"
+    - "Cloud"
+    - "DevOps"
   negative:
     - "Senior"
     - "Staff"
