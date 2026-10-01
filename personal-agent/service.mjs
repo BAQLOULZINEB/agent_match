@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {execFile} from 'node:child_process';
+import {execFile,spawn} from 'node:child_process';
 import {promisify} from 'node:util';
 import {randomUUID} from 'node:crypto';
 import {state,transaction,event,readText,write,propose,decide,recoverableProposals,hash} from './store.mjs';
@@ -81,7 +81,9 @@ export async function scanPublic(root) {
 }
 export function startPublicScan(root) {
   // The browser action must not wait on slow or rate-limited ATS hosts.
-  void scanPublic(root).catch(()=>{});
+  const child=spawn(process.execPath,[path.join(codeRoot,'personal-agent','bridge.mjs')],{cwd:root,detached:true,stdio:['pipe','ignore','ignore'],windowsHide:true,env:environment(root)});
+  child.stdin.end(JSON.stringify({action:'public-scan-worker'}));
+  child.unref();
   return {started:true,mode:'background'};
 }
 async function ensureTracked(root,s,offer) {
@@ -182,6 +184,7 @@ export async function handle(root,input) {
     case 'import':return importOffers(root,[input.offer]);
     case 'scan':return scan(root);
     case 'public-scan':return startPublicScan(root);
+    case 'public-scan-worker':return scanPublic(root);
     case 'stage':return changeStage(root,input);
     case 'draft':return saveDraft(root,input);
     case 'prepare-draft':return prepareDraft(root,input);
