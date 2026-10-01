@@ -68,7 +68,8 @@ export async function scanPublic(root) {
     const started=new Date().toISOString();
     await transaction(root,s=>event(s,'Collecte','Recherche publique France','Sources ATS publiques : Greenhouse, Lever et Ashby. France Travail n’est pas requis.','running'));
     try {
-      const result=await exec(process.execPath,[path.join(codeRoot,'scan-ats-full.mjs'),'--since','14','--limit','50','--ats','greenhouse,lever,ashby','--json','--dry-run'],{cwd:codeRoot,env:{...environment(root),CAREER_OPS_PORTALS:path.join(codeRoot,'personal-agent','public-portals.yml')},timeout:150000,maxBuffer:8000000});
+      // Keep the interactive search quick. The scheduler can repeat it for broader coverage.
+      const result=await exec(process.execPath,[path.join(codeRoot,'scan-ats-full.mjs'),'--since','7','--limit','15','--ats','greenhouse,lever,ashby','--json','--dry-run'],{cwd:codeRoot,env:{...environment(root),CAREER_OPS_PORTALS:path.join(codeRoot,'personal-agent','public-portals.yml')},timeout:60000,maxBuffer:8000000});
       const payload=JSON.parse(result.stdout.trim());
       const outcome=await importOffers(root,payload.offers||[],{source:'ATS publics'});
       await transaction(root,v=>{v.lastPublicScan={started,finished:new Date().toISOString(),status:'success',...outcome,companiesScanned:payload.companiesScanned,postingsKept:payload.postingsKept};event(v,'Filtrage','Recherche publique terminée',`${outcome.added} offres ajoutées, ${payload.companiesScanned||0} entreprises examinées.`);});
