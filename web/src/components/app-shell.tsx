@@ -21,7 +21,7 @@ import { NAV_ITEMS, isActivePath } from "@/lib/nav-items";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (pathname === '/login') return <>{children}</>;
+  if (pathname === '/login' || pathname.startsWith('/personal')) return <>{children}</>;
   return (
     <JobsProvider>
       <PipelineProvider>

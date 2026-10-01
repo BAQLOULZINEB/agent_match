@@ -1,0 +1,25 @@
+# Public zero-credential ATS search defaults for the personal assistant.
+# This is a source configuration, not a candidate profile.
+title_filter:
+  positive:
+    - "AI Engineer"
+    - "Artificial Intelligence"
+    - "Machine Learning"
+    - "ML Engineer"
+    - "Data Engineer"
+    - "Data Scientist"
+    - "Data Science"
+    - "GenAI"
+    - "Generative AI"
+    - "LLM"
+    - "RAG"
+  negative:
+    - "Senior"
+    - "Staff"
+    - "Principal"
+    - "Director"
+    - "Head of"
+location_filter:
+  allow: ["France", "Tours", "Lille", "Paris", "Rabat", "Salé", "Morocco"]
+  strict: false
+max_posting_age_days: 14
