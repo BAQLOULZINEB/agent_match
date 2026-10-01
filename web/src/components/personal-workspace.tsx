@@ -42,7 +42,7 @@ export function PersonalWorkspace() {
   const [message, setMessage] = useState('');
   const [localReply, setLocalReply] = useState('');
   const [language, setLanguage] = useState('fr');
-  const [speak, setSpeak] = useState(false);
+  const [speak, setSpeak] = useState(true);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
   const [speechAvailable, setSpeechAvailable] = useState(false);
   const [listening, setListening] = useState(false);
@@ -211,5 +211,6 @@ export function PersonalWorkspace() {
 function ConnectionCard({ title, description, configured, fields, busy, onSave, provider }: { provider?: string; title: string; description: string; configured: boolean; fields: [string, string, boolean][]; busy: boolean; onSave: (values: Record<string, string>) => Promise<boolean> }) {
   return <form className="cs-card cs-connection" onSubmit={e => { e.preventDefault(); const form = e.currentTarget; const values = Object.fromEntries(Array.from(new FormData(form).entries()).map(([key, value]) => [key, String(value)])); void onSave(values).then(saved => { if (saved) form.reset(); }); }}><div className="cs-card-heading"><Link2 size={22} /><span className={`cs-tag ${configured ? 'connected' : ''}`}>{configured ? 'Configuré' : 'À configurer'}</span></div><h2>{title}</h2><p>{description}</p>{provider && <label>Fournisseur actif<select name="AI_PROVIDER" defaultValue={provider}><option value="openrouter">OpenRouter</option><option value="openai">OpenAI</option></select></label>}{fields.map(([name, label, secret]) => <label key={name}>{label}<input type={secret ? 'password' : 'text'} name={name} autoComplete="off" placeholder={secret && configured ? 'Enregistré · laisser vide pour conserver' : ''} /></label>)}<button className="cs-button secondary" disabled={busy}>Enregistrer les identifiants</button></form>;
 }
+
 
 
