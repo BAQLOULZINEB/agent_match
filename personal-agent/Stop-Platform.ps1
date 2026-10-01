@@ -2,7 +2,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $nodePath = (Get-Command node -ErrorAction Stop).Source
 $resolver = Join-Path $projectRoot 'path-resolver.mjs'
-$resolveScript = 'import {pathToFileURL} from "node:url";const m=await import(pathToFileURL(process.argv[1]));process.stdout.write(m.getCareerOpsRoot());'
+$resolveScript = 'import {pathToFileURL} from ''node:url'';const m=await import(pathToFileURL(process.argv[1]));process.stdout.write(m.getCareerOpsRoot());'
 $dataRoot = (& $nodePath --input-type=module -e $resolveScript $resolver)
 if ($LASTEXITCODE -ne 0 -or -not $dataRoot) { throw 'Cannot resolve the career-ops data directory.' }
 $runtime = Join-Path ([IO.Path]::GetFullPath($dataRoot)) 'data/personal-runtime'

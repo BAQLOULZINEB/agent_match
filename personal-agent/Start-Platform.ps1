@@ -61,5 +61,5 @@ $stopFile = Join-Path $runtime 'worker.stop'
 if (Test-Path -LiteralPath $stopFile) { Remove-Item -LiteralPath $stopFile }
 Start-OwnedProcess 'worker' $workerScript ('"' + $workerScript + '"') $projectRoot
 Write-Host 'Career agent is available at http://127.0.0.1:3000/personal'
-Write-Host 'Scheduled searches run only while this PC and the worker are running, after enabling the schedule and connecting France Travail.'
+Write-Host 'Scheduled searches run only while this PC and the worker are running. Public ATS search works without credentials; France Travail adds its official source when configured.'
 if (-not $NoBrowser) { Start-Process 'http://127.0.0.1:3000/personal' -WindowStyle Hidden }
