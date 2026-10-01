@@ -4,7 +4,7 @@ $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
   Write-Host 'Running core tests...'
-  npm test
+  npm --prefix web test
   Write-Host 'Running web typecheck...'
   npm --prefix web run typecheck
   if ($Build) {

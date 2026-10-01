@@ -5,7 +5,7 @@ This repository does not require GitHub-hosted runners for the personal platform
 Run validation locally from the repository root:
 
 ```powershell
-npm test
+npm --prefix web test
 npm --prefix web run typecheck
 npm --prefix web run build
 npm audit --audit-level=high
