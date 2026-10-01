@@ -6,7 +6,7 @@ import {promisify} from 'node:util';
 import {randomUUID} from 'node:crypto';
 import {state,transaction,event,readText,write,propose,decide,recoverableProposals,hash} from './store.mjs';
 import {normalizeOffer,assessOffer,offerKey,validateTransition,cleanText,validateSearch} from './domain.mjs';
-import {credentials,connectionStatus,saveCredentials,aiSettings,aiResponse,googleStart,googleFinish,googleRead,googleDisconnect,uploadReviewedDocument} from './connectors.mjs';
+import {credentials,connectionStatus,saveCredentials,aiSettings,aiResponse,jsonRequest,googleStart,googleFinish,googleRead,googleDisconnect,uploadReviewedDocument} from './connectors.mjs';
 import {appendToPipeline} from '../scan.mjs';
 import {withPipelineLock} from '../pipeline-lock.mjs';
 import {canonicalizeTrackerPath,trackerLockDirFor,acquireTrackerLock} from '../tracker-utils.mjs';
@@ -71,8 +71,18 @@ export async function scanPublic(root) {
       // Keep the interactive search quick. The scheduler can repeat it for broader coverage.
       const result=await exec(process.execPath,[path.join(codeRoot,'scan-ats-full.mjs'),'--since','7','--limit','15','--ats','greenhouse,lever,ashby','--json','--dry-run'],{cwd:codeRoot,env:{...environment(root),windowsHide:true,CAREER_OPS_PORTALS:path.join(codeRoot,'personal-agent','public-portals.yml')},windowsHide:true,timeout:60000,maxBuffer:8000000});
       const payload=JSON.parse(result.stdout.trim());
-      const outcome=await importOffers(root,payload.offers||[],{source:'ATS publics'});
-      await transaction(root,v=>{v.lastPublicScan={started,finished:new Date().toISOString(),status:'success',...outcome,companiesScanned:payload.companiesScanned,postingsKept:payload.postingsKept};event(v,'Filtrage','Recherche publique terminée',`${outcome.added} offres ajoutées, ${payload.companiesScanned||0} entreprises examinées.`);});
+      let offers=payload.offers||[];
+      // Credential-free fallback: Arbeitnow exposes a public job feed when
+      // ATS boards have no fresh matching postings.
+      try {
+        const api=await jsonRequest('https://www.arbeitnow.com/api/job-board-api',{signal:AbortSignal.timeout(12000)});
+        const terms=['ai','artificial intelligence','machine learning','data','analytics','software engineer','developer','stage','alternance','intern'];
+        const locations=['france','lille','tours','paris','rabat','sale','salé','morocco','remote'];
+        const fallback=(api.data||[]).filter(j=>{const t=`${j.title||''} ${j.description||''}`.toLowerCase(),l=String(j.location||'').toLowerCase();return terms.some(x=>t.includes(x))&&(!l||locations.some(x=>l.includes(x)));}).slice(0,40).map(j=>({title:j.title,company:j.company_name||'Employeur à vérifier',location:j.location||'Remote / à vérifier',country:/france|lille|tours|paris/.test(String(j.location||'').toLowerCase())?'France':'Unknown',contract:j.job_types?.join(', ')||'À vérifier',description:j.description||'',url:j.url,postedAt:j.created_at||null,source:'Arbeitnow (public)'}));
+        offers=offers.concat(fallback);
+      } catch { /* ATS results remain useful when the fallback is unavailable. */ }
+      const outcome=await importOffers(root,offers,{source:'Sources publiques'});
+      await transaction(root,v=>{v.lastPublicScan={started,finished:new Date().toISOString(),status:'success',...outcome,companiesScanned:payload.companiesScanned,postingsKept:offers.length};event(v,'Filtrage','Recherche publique terminée',`${outcome.added} offres ajoutées, ${payload.companiesScanned||0} entreprises examinées.`);});
       return {...outcome,companiesScanned:payload.companiesScanned||0};
     } catch(e) {
       await transaction(root,s=>{s.lastPublicScan={started,finished:new Date().toISOString(),status:'error',error:e.message};event(s,'Collecte','Recherche publique interrompue',e.message,'error');});throw e;
