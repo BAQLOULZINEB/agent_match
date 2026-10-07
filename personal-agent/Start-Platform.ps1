@@ -20,7 +20,7 @@ function Test-OwnedProcess($record, $scriptPath) {
   if (-not $record) { return $false }
   $process = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$record.pid)" -ErrorAction SilentlyContinue
   if (-not $process) { return $false }
-  $sameTime = $process.CreationDate.ToUniversalTime().ToString('o') -eq $record.createdAt
+  $sameTime = $process.CreationDate.ToUniversalTime() -eq ([datetime]$record.createdAt).ToUniversalTime()
   return $sameTime -and $process.ExecutablePath -eq $nodePath -and $record.script -eq $scriptPath -and $process.CommandLine.Contains($scriptPath)
 }
 function Save-Records {
@@ -50,6 +50,7 @@ if (-not (Test-OwnedProcess $records['web'] $nextScript)) {
 # Both child processes inherit the same canonical data directory.
 $env:CAREER_OPS_ROOT = $dataRoot
 $env:CAREER_OPS_DATA_DIR = $dataRoot
+& (Join-Path $PSScriptRoot 'Start-FreeLLMAPI.ps1')
 Start-OwnedProcess 'web' $nextScript ('"' + $nextScript + '" start --hostname 127.0.0.1 --port 3000') $webRoot
 $ready = $false
 for ($attempt=0; $attempt -lt 30; $attempt++) {

@@ -1,9 +1,10 @@
 const DEFAULT_ROUTES = {
-  light: ["ollama", "openrouter", "gemini", "groq", "litellm", "openai"],
-  heavy: ["openrouter", "litellm", "openai", "gemini", "groq", "ollama"],
+  light: ["freellmapi", "ollama", "openrouter", "gemini", "groq", "litellm", "openai"],
+  heavy: ["freellmapi", "openrouter", "litellm", "openai", "gemini", "groq", "ollama"],
 };
 
 const DEFAULT_MODELS = {
+  freellmapi: "auto",
   ollama: "qwen2.5:14b",
   openrouter: "openrouter/free",
   litellm: "",
@@ -31,6 +32,17 @@ export function providerSettings(config = {}) {
   const selected = String(config.AI_PROVIDER || "auto").toLowerCase();
   const litellmKeys = split(config.LITELLM_API_KEYS || config.LITELLM_API_KEY || "");
   const providers = {
+    freellmapi: {
+      provider: "freellmapi",
+      baseUrl: config.FREELLMAPI_BASE_URL || "http://127.0.0.1:3001/v1",
+      model: config.FREELLMAPI_MODEL || DEFAULT_MODELS.freellmapi,
+      keys: split(config.FREELLMAPI_API_KEYS || config.FREELLMAPI_API_KEY),
+      configured: Boolean(config.FREELLMAPI_API_KEYS || config.FREELLMAPI_API_KEY),
+      // The gateway is local, but its selected providers are remote. Keep it out
+      // of strict local-only mode so that mode continues to mean no cloud egress.
+      local: false,
+      timeoutMs: Number(config.FREELLMAPI_TIMEOUT_MS) || 130_000,
+    },
     ollama: {
       provider: "ollama",
       baseUrl: config.OLLAMA_BASE_URL || "http://127.0.0.1:11434/v1",
@@ -139,7 +151,7 @@ async function requestProvider(provider, { instructions, messages, fetchImpl, ti
         headers,
         body: JSON.stringify(body),
         redirect: "error",
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: AbortSignal.timeout(provider.timeoutMs || timeoutMs),
       });
       if (!response.ok) throw new Error(`${provider.provider} HTTP ${response.status}`);
       const payload = await response.json();
@@ -169,6 +181,6 @@ export async function routedJsonResponse(config, request, options = {}) {
       if (options.onFallback) options.onFallback({ provider: name, message });
     }
   }
-  if (!attempted.length) throw new Error("Aucun moteur IA disponible. Lancez Ollama ou configurez une clé cloud dans Connexions.");
-  throw new Error(`Tous les moteurs IA ont échoué (${attempted.join(" → ")}). Vérifiez Ollama, les quotas et les modèles.`);
+  if (!attempted.length) throw new Error("Aucun moteur IA disponible. Lancez FreeLLMAPI/Ollama ou configurez une clé dans Connexions.");
+  throw new Error(`Tous les moteurs IA ont échoué (${attempted.join(" → ")}). Vérifiez FreeLLMAPI, Ollama, les quotas et les modèles.`);
 }

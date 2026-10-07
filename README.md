@@ -10,6 +10,7 @@ Local-first personal career assistant for Zineb Baqloul: voice conversation, opp
 - Supports browser voice input and spoken replies when the browser provides speech APIs.
 - Stores personal profile, CV, reports and credentials locally; private files are ignored by Git.
 - Works with a local n8n instance through the documented adapter points.
+- Routes AI requests through a locally managed FreeLLMAPI gateway first, with anonymous free-provider routing and existing direct-provider fallbacks.
 
 ## Run locally
 
@@ -29,6 +30,7 @@ npm audit --audit-level=high
 ```
 
 See [`docs/LOCAL-CI.md`](docs/LOCAL-CI.md) for the free local validation workflow and [`personal-agent/HANDOFF.md`](personal-agent/HANDOFF.md) for implementation status and privacy boundaries.
+See [`docs/FREELLMAPI.md`](docs/FREELLMAPI.md) for the gateway architecture, lifecycle commands, privacy limits and troubleshooting.
 
 ## Privacy
 

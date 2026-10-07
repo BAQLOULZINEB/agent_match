@@ -6,7 +6,7 @@ import {cleanText} from './domain.mjs';
 import {providerSettings,routedJsonResponse,routingStatus} from './model-router.mjs';
 
 const privateFile=root=>path.join(root,'data','personal-secrets.json');
-const allowedKeys=['AI_PROVIDER','AI_ROUTING_MODE','AI_LIGHT_ROUTE','AI_HEAVY_ROUTE','AI_TIMEOUT_MS','AI_DISABLE_OLLAMA','OLLAMA_BASE_URL','OLLAMA_MODEL','OPENROUTER_API_KEY','OPENROUTER_API_KEYS','OPENROUTER_BASE_URL','OPENROUTER_MODEL','LITELLM_API_KEY','LITELLM_API_KEYS','LITELLM_BASE_URL','LITELLM_MODEL','OPENAI_API_KEY','OPENAI_API_KEYS','OPENAI_BASE_URL','OPENAI_MODEL','GEMINI_API_KEY','GEMINI_API_KEYS','GEMINI_BASE_URL','GEMINI_MODEL','GROQ_API_KEY','GROQ_API_KEYS','GROQ_BASE_URL','GROQ_MODEL','FRANCE_TRAVAIL_CLIENT_ID','FRANCE_TRAVAIL_CLIENT_SECRET','FRANCE_TRAVAIL_SCOPE','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_REDIRECT_URI'];
+const allowedKeys=['AI_PROVIDER','AI_ROUTING_MODE','AI_LIGHT_ROUTE','AI_HEAVY_ROUTE','AI_TIMEOUT_MS','AI_DISABLE_OLLAMA','FREELLMAPI_API_KEY','FREELLMAPI_API_KEYS','FREELLMAPI_BASE_URL','FREELLMAPI_MODEL','FREELLMAPI_TIMEOUT_MS','OLLAMA_BASE_URL','OLLAMA_MODEL','OPENROUTER_API_KEY','OPENROUTER_API_KEYS','OPENROUTER_BASE_URL','OPENROUTER_MODEL','LITELLM_API_KEY','LITELLM_API_KEYS','LITELLM_BASE_URL','LITELLM_MODEL','OPENAI_API_KEY','OPENAI_API_KEYS','OPENAI_BASE_URL','OPENAI_MODEL','GEMINI_API_KEY','GEMINI_API_KEYS','GEMINI_BASE_URL','GEMINI_MODEL','GROQ_API_KEY','GROQ_API_KEYS','GROQ_BASE_URL','GROQ_MODEL','FRANCE_TRAVAIL_CLIENT_ID','FRANCE_TRAVAIL_CLIENT_SECRET','FRANCE_TRAVAIL_SCOPE','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_REDIRECT_URI'];
 export function credentials(root) {
   const saved=readJSON(privateFile(root),{});
   for(const key of allowedKeys) if(process.env[key]) saved[key]=process.env[key];
@@ -18,7 +18,7 @@ export async function saveCredentials(root,values) {
     for(const [key,value] of Object.entries(values||{})) {
       const multi=key.endsWith('_KEYS');
       if(!allowedKeys.includes(key)||typeof value!=='string'||value.length>5000||value.includes('\0')||(!multi&&/[\r\n]/.test(value))) throw Error('Invalid connection setting.');
-      if(key==='AI_PROVIDER'&&!['auto','ollama','openrouter','litellm','openai','gemini','groq'].includes(value))throw Error('Unknown AI provider.');
+      if(key==='AI_PROVIDER'&&!['auto','freellmapi','ollama','openrouter','litellm','openai','gemini','groq'].includes(value))throw Error('Unknown AI provider.');
       if(key==='AI_ROUTING_MODE'&&!['hybrid','local','cloud'].includes(value))throw Error('Unknown AI routing mode.');
       if(value.trim()) data[key]=value.trim();
     }

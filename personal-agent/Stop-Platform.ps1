@@ -15,7 +15,8 @@ foreach ($name in @('worker','web')) {
   if (-not $record) { continue }
   $identity = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$record.pid)" -ErrorAction SilentlyContinue
   if (-not $identity) { continue }
-  if ($record.script -ne $expected[$name] -or $identity.ExecutablePath -ne $record.executable -or $identity.ExecutablePath -ne $nodePath -or $identity.CreationDate.ToUniversalTime().ToString('o') -ne $record.createdAt -or -not $identity.CommandLine.Contains($expected[$name])) {
+  $sameTime = $identity.CreationDate.ToUniversalTime() -eq ([datetime]$record.createdAt).ToUniversalTime()
+  if ($record.script -ne $expected[$name] -or $identity.ExecutablePath -ne $record.executable -or $identity.ExecutablePath -ne $nodePath -or -not $sameTime -or -not $identity.CommandLine.Contains($expected[$name])) {
     throw "Refusing to stop PID $($record.pid): its identity does not match this platform's $name process."
   }
   if ($name -eq 'worker') {
@@ -30,10 +31,12 @@ foreach ($name in @('worker','web')) {
     # Recheck after waiting; never act on a recycled PID.
     $identity = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$record.pid)" -ErrorAction SilentlyContinue
     if (-not $identity) { continue }
-    if ($identity.CreationDate.ToUniversalTime().ToString('o') -ne $record.createdAt -or $identity.ExecutablePath -ne $nodePath -or -not $identity.CommandLine.Contains($expected[$name])) { throw 'Process identity changed. Stop cancelled.' }
+    $sameTime = $identity.CreationDate.ToUniversalTime() -eq ([datetime]$record.createdAt).ToUniversalTime()
+    if (-not $sameTime -or $identity.ExecutablePath -ne $nodePath -or -not $identity.CommandLine.Contains($expected[$name])) { throw 'Process identity changed. Stop cancelled.' }
     Stop-Process -InputObject $process -ErrorAction Stop
   }
 }
 # Only remove this exact runtime record, never a directory or user data.
 Remove-Item -LiteralPath $recordFile
+& (Join-Path $PSScriptRoot 'Stop-FreeLLMAPI.ps1')
 Write-Host 'Local dashboard and scheduled worker stopped. Your profile, offers and history are saved.'
