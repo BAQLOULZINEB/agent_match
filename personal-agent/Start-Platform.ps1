@@ -53,13 +53,13 @@ $env:CAREER_OPS_DATA_DIR = $dataRoot
 Start-OwnedProcess 'web' $nextScript ('"' + $nextScript + '" start --hostname 127.0.0.1 --port 3000') $webRoot
 $ready = $false
 for ($attempt=0; $attempt -lt 30; $attempt++) {
-  try { $response = Invoke-WebRequest -Uri 'http://127.0.0.1:3000/personal' -UseBasicParsing -TimeoutSec 2; if ($response.StatusCode -eq 200) { $ready=$true; break } } catch { }
+  try { $response = Invoke-WebRequest -Uri 'http://127.0.0.1:3000/' -UseBasicParsing -TimeoutSec 2; if ($response.StatusCode -eq 200) { $ready=$true; break } } catch { }
   Start-Sleep -Seconds 1
 }
 if (-not $ready) { throw "Dashboard did not become ready. Read $runtime/web.err.log. Stop-Platform.ps1 can stop the recorded process." }
 $stopFile = Join-Path $runtime 'worker.stop'
 if (Test-Path -LiteralPath $stopFile) { Remove-Item -LiteralPath $stopFile }
 Start-OwnedProcess 'worker' $workerScript ('"' + $workerScript + '"') $projectRoot
-Write-Host 'Career agent is available at http://127.0.0.1:3000/personal'
+Write-Host 'Career Ops is available at http://127.0.0.1:3000/'
 Write-Host 'Scheduled searches run only while this PC and the worker are running. Public ATS search works without credentials; France Travail adds its official source when configured.'
-if (-not $NoBrowser) { Start-Process 'http://127.0.0.1:3000/personal' -WindowStyle Hidden }
+if (-not $NoBrowser) { Start-Process 'http://127.0.0.1:3000/' -WindowStyle Hidden }

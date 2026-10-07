@@ -37,7 +37,9 @@ export const DEFAULT_FILTERS: ExploreFilters = {
   alwaysAllow: [],
   sinceDays: 7,
   ats: [...ATS_SOURCES],
-  limitPerAts: 150,
+  // A focused first pass is fast enough to feel interactive. Users can raise
+  // the depth from the advanced controls when they want a broader sweep.
+  limitPerAts: 50,
 };
 
 /** Banded title-vs-profile overlap (web/src/lib/title-fit.mjs). Words, not

@@ -1,0 +1,42 @@
+name: Career Ops CI
+
+on:
+  push:
+    branches: [main, release-ready]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: career-ops-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install root dependencies without downloading Chromium
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install web dependencies
+        run: npm --prefix web ci --ignore-scripts --no-audit --no-fund
+      - name: Syntax checks
+        run: npm run lint
+      - name: Router tests
+        run: npm run test:model-router
+      - name: Web tests
+        run: npm --prefix web test
+      - name: Type check
+        run: npm --prefix web run typecheck
+      - name: Production build
+        run: npm --prefix web run build

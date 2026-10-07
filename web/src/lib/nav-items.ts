@@ -11,9 +11,8 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/personal", label: "Career Studio", icon: Radar, chip: "Agent" },
   { href: "/", label: "Today", icon: LayoutDashboard },
-  { href: "/explore", label: "Explore", icon: Compass, chip: "New" },
+  { href: "/explore", label: "Career Studio", icon: Compass, chip: "Jobs" },
   { href: "/pipeline", label: "Pipeline", icon: ListChecks },
   { href: "/followups", label: "Follow-ups", icon: Send },
   { href: "/portals", label: "Portals", icon: Radar },

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "target_job_titles": [
+    "AI Engineer",
+    "Machine Learning Engineer",
+    "Data Engineer",
+    "Data Scientist",
+    "GenAI Engineer"
+  ],
+  "target_companies": ["Deloitte", "Capgemini"],
+  "target_ats": ["Greenhouse", "Lever", "Ashby", "Workday"],
+  "locations": {
+    "countries": ["France", "Morocco"],
+    "priority_cities": ["Lille", "Tours", "Paris", "Rabat", "Salé"],
+    "remote_preference": "hybrid_or_remote",
+    "relocation": "confirm_per_offer"
+  },
+  "salary": {
+    "currency": "EUR",
+    "minimum": null,
+    "target": null,
+    "period": "year",
+    "negotiable": true
+  },
+  "knockout_answers": {
+    "requires_visa_sponsorship": {
+      "answer": null,
+      "evidence": null,
+      "instruction": "Confirm for each country and application; never infer or auto-answer."
+    },
+    "work_authorization": {
+      "answer": null,
+      "evidence": null,
+      "instruction": "Only use a user-confirmed legal status."
+    },
+    "available_start_date": {
+      "answer": null,
+      "evidence": null
+    }
+  },
+  "automation": {
+    "auto_submit": false,
+    "require_human_review": true,
+    "deduplicate_by_canonical_url": true
+  }
+}

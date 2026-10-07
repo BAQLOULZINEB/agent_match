@@ -3,9 +3,10 @@ import fs from 'node:fs';
 import {randomBytes,createHash,timingSafeEqual} from 'node:crypto';
 import {readJSON,write,transaction,event} from './store.mjs';
 import {cleanText} from './domain.mjs';
+import {providerSettings,routedJsonResponse,routingStatus} from './model-router.mjs';
 
 const privateFile=root=>path.join(root,'data','personal-secrets.json');
-const allowedKeys=['AI_PROVIDER','OPENROUTER_API_KEY','OPENROUTER_API_KEYS','OPENROUTER_MODEL','OPENAI_API_KEY','OPENAI_API_KEYS','OPENAI_MODEL','FRANCE_TRAVAIL_CLIENT_ID','FRANCE_TRAVAIL_CLIENT_SECRET','FRANCE_TRAVAIL_SCOPE','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_REDIRECT_URI'];
+const allowedKeys=['AI_PROVIDER','AI_ROUTING_MODE','AI_LIGHT_ROUTE','AI_HEAVY_ROUTE','AI_TIMEOUT_MS','AI_DISABLE_OLLAMA','OLLAMA_BASE_URL','OLLAMA_MODEL','OPENROUTER_API_KEY','OPENROUTER_API_KEYS','OPENROUTER_BASE_URL','OPENROUTER_MODEL','LITELLM_API_KEY','LITELLM_API_KEYS','LITELLM_BASE_URL','LITELLM_MODEL','OPENAI_API_KEY','OPENAI_API_KEYS','OPENAI_BASE_URL','OPENAI_MODEL','GEMINI_API_KEY','GEMINI_API_KEYS','GEMINI_BASE_URL','GEMINI_MODEL','GROQ_API_KEY','GROQ_API_KEYS','GROQ_BASE_URL','GROQ_MODEL','FRANCE_TRAVAIL_CLIENT_ID','FRANCE_TRAVAIL_CLIENT_SECRET','FRANCE_TRAVAIL_SCOPE','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','GOOGLE_REDIRECT_URI'];
 export function credentials(root) {
   const saved=readJSON(privateFile(root),{});
   for(const key of allowedKeys) if(process.env[key]) saved[key]=process.env[key];
@@ -15,8 +16,10 @@ export async function saveCredentials(root,values) {
   await transaction(root,s=>{
     const data=readJSON(privateFile(root),{});
     for(const [key,value] of Object.entries(values||{})) {
-      if(!allowedKeys.includes(key)||typeof value!=='string'||value.length>5000||/[\r\n\0]/.test(value)) throw Error('Invalid connection setting.');
-      if(key==='AI_PROVIDER'&&!['openrouter','openai'].includes(value))throw Error('Unknown AI provider.');
+      const multi=key.endsWith('_KEYS');
+      if(!allowedKeys.includes(key)||typeof value!=='string'||value.length>5000||value.includes('\0')||(!multi&&/[\r\n]/.test(value))) throw Error('Invalid connection setting.');
+      if(key==='AI_PROVIDER'&&!['auto','ollama','openrouter','litellm','openai','gemini','groq'].includes(value))throw Error('Unknown AI provider.');
+      if(key==='AI_ROUTING_MODE'&&!['hybrid','local','cloud'].includes(value))throw Error('Unknown AI routing mode.');
       if(value.trim()) data[key]=value.trim();
     }
     write(privateFile(root),data); try{fs.chmodSync(privateFile(root),0o600);}catch{}
@@ -26,31 +29,15 @@ export async function saveCredentials(root,values) {
 }
 export function connectionStatus(root) {
   const c=credentials(root),g=readJSON(path.join(root,'data','google-token.json'),{});
-  const ai=aiSettings(c);
-  return {ai:ai.keys.length>0,provider:ai.provider,model:ai.model,keyCount:ai.keys.length,franceTravail:!!(c.FRANCE_TRAVAIL_CLIENT_ID&&c.FRANCE_TRAVAIL_CLIENT_SECRET),googleConfigured:!!(c.GOOGLE_CLIENT_ID&&c.GOOGLE_CLIENT_SECRET),googleConnected:!!g.refresh_token,googleScopes:g.scope||'',redirectUri:c.GOOGLE_REDIRECT_URI||'http://localhost:3000/personal/google-callback',morocco:'manual-import',hosting:'local'};
+  const ai=routingStatus(c);
+  return {ai:ai.available,provider:ai.provider,model:ai.model,keyCount:ai.configured.length,aiRoutes:{light:ai.lightRoute,heavy:ai.heavyRoute},franceTravail:!!(c.FRANCE_TRAVAIL_CLIENT_ID&&c.FRANCE_TRAVAIL_CLIENT_SECRET),googleConfigured:!!(c.GOOGLE_CLIENT_ID&&c.GOOGLE_CLIENT_SECRET),googleConnected:!!g.refresh_token,googleScopes:g.scope||'',redirectUri:c.GOOGLE_REDIRECT_URI||'http://localhost:3000/personal/google-callback',morocco:'manual-import',hosting:'local'};
 }
 export function aiSettings(c) {
-  const provider=c.AI_PROVIDER||((c.OPENROUTER_API_KEY||c.OPENROUTER_API_KEYS)?'openrouter':'openai');
-  const raw=provider==='openrouter'?(c.OPENROUTER_API_KEYS||c.OPENROUTER_API_KEY):(c.OPENAI_API_KEYS||c.OPENAI_API_KEY);
-  const keys=String(raw||'').split(/[\s,;]+/).map(x=>x.trim()).filter(Boolean);
-  return provider==='openrouter'?{provider,keys,model:c.OPENROUTER_MODEL||'openrouter/free'}:{provider,keys,model:c.OPENAI_MODEL||'gpt-4.1-mini'};
+  const settings=providerSettings(c),status=routingStatus(c);
+  return {...status,keys:status.configured,settings};
 }
-export async function aiResponse(c,{instructions,messages}) {
-  const a=aiSettings(c);
-  if(!a.keys.length)throw Error('Configurez au moins une clé du fournisseur IA dans Connexions.');
-  if(a.provider==='openrouter') {
-    let last;
-    for(const key of a.keys) try {
-      const headers={Authorization:`Bearer ${key}`,'Content-Type':'application/json'};
-      const result=await jsonRequest('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers,body:JSON.stringify({model:a.model,messages:[{role:'system',content:instructions},...messages],response_format:{type:'json_object'},max_tokens:3500,provider:{data_collection:'deny'}})});
-      if(result.error)throw Error('Provider rejected request');
-      return JSON.parse(result.choices?.[0]?.message?.content||'{}');
-    } catch(e) { last=e; }
-    throw Error(`Toutes les clés IA ont échoué. Vérifiez les quotas et le modèle. (${last?.message||'erreur réseau'})`);
-  }
-  const headers={Authorization:`Bearer ${a.keys[0]}`,'Content-Type':'application/json'};
-  const result=await jsonRequest('https://api.openai.com/v1/responses',{method:'POST',headers,body:JSON.stringify({model:a.model,store:false,instructions,input:messages,text:{format:{type:'json_object'}},max_output_tokens:5000})});
-  return JSON.parse((result.output||[]).flatMap(x=>x.content||[]).filter(x=>x.type==='output_text').map(x=>x.text).join(''));
+export async function aiResponse(c,{instructions,messages,task='light'}) {
+  return routedJsonResponse(c,{instructions,messages,task});
 }
 export async function jsonRequest(url,options={}) {
   const r=await fetch(url,{...options,redirect:'error',signal:AbortSignal.timeout(45000)});

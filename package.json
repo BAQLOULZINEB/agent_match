@@ -8,6 +8,9 @@
   },
   "scripts": {
     "doctor": "node doctor.mjs",
+    "db:init": "node scripts/init-db.mjs",
+    "cv:parse": "python personal-agent/cv_parser.py",
+    "test:model-router": "node --test web/tests/lib/model-router.test.mjs",
     "or": "node openrouter-runner.mjs",
     "or:scan": "node openrouter-runner.mjs scan",
     "or:pipeline": "node openrouter-runner.mjs pipeline",

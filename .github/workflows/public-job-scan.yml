@@ -1,0 +1,44 @@
+name: Public job scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      titles:
+        description: Comma-separated titles or keywords
+        required: false
+      locations:
+        description: Comma-separated locations
+        required: false
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-job-scan
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CAREER_OPS_SCAN_TITLES: ${{ inputs.titles }}
+      CAREER_OPS_SCAN_LOCATIONS: ${{ inputs.locations }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Scan a credential-free public feed
+        run: node scripts/cloud-scan.mjs cloud-scan-results.json
+      - name: Upload review-only results
+        uses: actions/upload-artifact@v4
+        with:
+          name: career-ops-public-jobs-${{ github.run_number }}
+          path: cloud-scan-results.json
+          retention-days: 7
+          if-no-files-found: error

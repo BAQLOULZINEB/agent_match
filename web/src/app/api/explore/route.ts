@@ -4,6 +4,7 @@ import { runDiscovery } from "@/lib/core/scan";
 import { rootScript } from "@/lib/career-ops";
 import { parseExplorePatch, DEFAULT_FILTERS, type DiscoveredOffer, type ScanEvent } from "@/lib/explore";
 import { scannerMissingBody, SCANNER_MISSING_STATUS } from "@/lib/explore-error.mjs";
+import { fetchPublicJobs } from "@/lib/core/public-job-feed.mjs";
 
 // Discovery is HTTP-bound across many ATS boards; give it room. It is FREE —
 // zero LLM tokens (the scanner only does HTTP + JSON, and --dry-run writes nothing).
@@ -40,9 +41,28 @@ export async function POST(req: NextRequest) {
       };
       send({ kind: "start", ats: filters.ats, sinceDays: filters.sinceDays, limit: filters.limitPerAts, free: true } satisfies ScanEvent);
       let offers: DiscoveredOffer[] = [];
+      // The personal v2 work proved that a small credential-free feed makes
+      // discovery useful immediately. Keep it inside the canonical Explore
+      // stream: one UI, one result shape, and the user still chooses what enters
+      // data/pipeline.md. The deeper ATS sweep continues in parallel.
+      const publicFeed = fetchPublicJobs(filters)
+        .then((items: DiscoveredOffer[]) => {
+          for (const offer of items) send({ kind: "offer", offer } satisfies ScanEvent);
+          return items;
+        })
+        .catch((err: unknown) => {
+          send({ kind: "log", line: `Public feed unavailable: ${err instanceof Error ? err.message : "unknown error"}` } satisfies ScanEvent);
+          return [] as DiscoveredOffer[];
+        });
       try {
-        offers = await runDiscovery(filters, (e: ScanEvent) => send(e));
+        const atsOffers = await runDiscovery(filters, (e: ScanEvent) => send(e));
+        const feedOffers = await publicFeed;
+        const byUrl = new Map<string, DiscoveredOffer>();
+        for (const offer of [...feedOffers, ...atsOffers]) byUrl.set(offer.url, offer);
+        offers = [...byUrl.values()];
       } catch (err) {
+        const feedOffers = await publicFeed;
+        offers = feedOffers;
         send({ kind: "error", message: err instanceof Error ? err.message : "discovery failed" } satisfies ScanEvent);
       }
       send({ kind: "done", count: offers.length, offers, cost: { tokens: 0, usd: 0 } } satisfies ScanEvent);
