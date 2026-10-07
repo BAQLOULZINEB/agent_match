@@ -36,7 +36,7 @@ jobs:
       - name: Scan a credential-free public feed
         run: node scripts/cloud-scan.mjs cloud-scan-results.json
       - name: Upload review-only results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: career-ops-public-jobs-${{ github.run_number }}
           path: cloud-scan-results.json
