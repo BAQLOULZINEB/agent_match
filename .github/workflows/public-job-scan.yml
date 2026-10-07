@@ -27,7 +27,7 @@ jobs:
       CAREER_OPS_SCAN_TITLES: ${{ inputs.titles }}
       CAREER_OPS_SCAN_LOCATIONS: ${{ inputs.locations }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
